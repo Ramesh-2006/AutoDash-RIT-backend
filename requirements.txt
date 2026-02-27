@@ -7,3 +7,6 @@ scikit-learn
 joblib
 streamlit
 fpdf
+fastapi
+uvicorn
+python-multipart
