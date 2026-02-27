@@ -10,3 +10,4 @@ fpdf
 fastapi
 uvicorn
 python-multipart
+rapidfuzz
