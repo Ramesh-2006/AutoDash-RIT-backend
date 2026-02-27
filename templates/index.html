@@ -1,0 +1,762 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AutoDash RIT - Data Analysis Platform</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="logo">
+                <h1>AutoDash RIT</h1>
+                <p>Intelligent Data Analysis Platform</p>
+            </div>
+            <div class="role-selector" id="roleSelector">
+                <button class="role-btn" data-role="student">Student</button>
+                <button class="role-btn" data-role="faculty">Faculty</button>
+                <button class="role-btn" data-role="admin">Admin</button>
+            </div>
+        </header>
+
+        <!-- Upload Section -->
+        <section class="upload-section" id="uploadSection">
+            <div class="upload-icon">📁</div>
+            <h2>Upload Your Dataset</h2>
+            <p>Supported formats: CSV, Excel (.xlsx, .xls)</p>
+            <input type="file" id="fileInput" accept=".csv,.xlsx,.xls" hidden>
+            <button class="btn btn-primary" id="uploadBtn">Choose File</button>
+            <div class="upload-info" id="uploadInfo">
+                No file selected. Please upload a dataset to begin.
+            </div>
+        </section>
+
+        <!-- Dashboard Tabs (Initially Hidden) -->
+        <div class="dashboard" id="dashboard" style="display: none;">
+            <!-- Tab Navigation -->
+            <div class="tabs">
+                <button class="tab-btn active" data-tab="overview">Overview</button>
+                <button class="tab-btn" data-tab="relationship">Relationship</button>
+                <button class="tab-btn" data-tab="timeseries">Time Series</button>
+                <button class="tab-btn" data-tab="insights">AI Insights</button>
+                <button class="tab-btn" data-tab="chat">AI Chatbot</button>
+                <button class="tab-btn" data-tab="performance" id="performanceTab">Performance Rating</button>
+            </div>
+
+            <!-- Tab Content -->
+            <div class="tab-content">
+                <!-- Overview Tab -->
+                <div class="tab-pane active" id="overview">
+                    <h2>Overview</h2>
+                    
+                    <!-- Recommended Analyses -->
+                    <div class="card">
+                        <h3>Recommended Analyses</h3>
+                        <div id="analysisFunctions" class="analysis-grid">
+                            <p>Loading recommendations...</p>
+                        </div>
+                        <button class="btn btn-secondary" id="runAllAnalyses">Run All Analyses</button>
+                    </div>
+
+                    <!-- Visualizations -->
+                    <div class="card">
+                        <h3>Visualizations</h3>
+                        <div id="visualizations" class="viz-grid">
+                            <p>Upload a file to generate visualizations</p>
+                        </div>
+                    </div>
+
+                    <!-- Export Options -->
+                    <div class="card">
+                        <h3>Export Report</h3>
+                        <div class="export-options">
+                            <button class="btn btn-export" data-format="pdf">📄 PDF</button>
+                            <button class="btn btn-export" data-format="excel">📊 Excel</button>
+                            <button class="btn btn-export" data-format="html">🌐 HTML</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Relationship Tab -->
+                <div class="tab-pane" id="relationship">
+                    <h2>Relationship Analysis</h2>
+                    <div class="card" id="relationshipContent">
+                        <p>Select columns to analyze relationships</p>
+                    </div>
+                </div>
+
+                <!-- Time Series Tab -->
+                <div class="tab-pane" id="timeseries">
+                    <h2>Time Series Analysis</h2>
+                    <div class="card" id="timeseriesContent">
+                        <p>Select date and numeric columns for time series analysis</p>
+                    </div>
+                </div>
+
+                <!-- AI Insights Tab -->
+                <div class="tab-pane" id="insights">
+                    <h2>AI Insights</h2>
+                    <div class="card" id="insightsContent">
+                        <p>Loading insights...</p>
+                    </div>
+                </div>
+
+                <!-- AI Chatbot Tab -->
+                <div class="tab-pane" id="chat">
+                    <h2>Chat with your Data</h2>
+                    <div class="chat-container">
+                        <div class="chat-messages" id="chatMessages">
+                            <div class="message bot">
+                                <div class="message-content">
+                                    Hello! Ask me anything about your data!
+                                </div>
+                            </div>
+                        </div>
+                        <div class="chat-input">
+                            <input type="text" id="chatInput" placeholder="Type your question...">
+                            <button class="btn btn-primary" id="sendMessage">Send</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Student Performance Tab -->
+                <div class="tab-pane" id="performance">
+                    <h2>Student Performance Rating</h2>
+                    
+                    <!-- Number of Subjects -->
+                    <div class="card">
+                        <h3>Number of Subjects</h3>
+                        <div class="form-group">
+                            <input type="number" id="numSubjects" min="1" max="10" value="5">
+                            <button class="btn btn-secondary" id="setSubjects">Set</button>
+                        </div>
+                    </div>
+
+                    <!-- Subjects Container -->
+                    <div id="subjectsContainer"></div>
+
+                    <!-- Extracurricular -->
+                    <div class="card">
+                        <h3>Extracurricular Activities</h3>
+                        <div class="form-group">
+                            <label>
+                                <input type="radio" name="extracurricular" value="yes" checked> Yes
+                            </label>
+                            <label>
+                                <input type="radio" name="extracurricular" value="no"> No
+                            </label>
+                        </div>
+                        <div class="form-group" id="activityGroup">
+                            <input type="text" id="activityInput" placeholder="Specify extracurricular activity">
+                        </div>
+                    </div>
+
+                    <!-- Calculate Button -->
+                    <button class="btn btn-primary" id="calculateRatings">Calculate Performance Ratings</button>
+
+                    <!-- Results -->
+                    <div id="ratingsResult" style="display: none;"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Loading Overlay -->
+        <div class="loading-overlay" id="loadingOverlay" style="display: none;">
+            <div class="spinner"></div>
+            <p>Processing...</p>
+        </div>
+    </div>
+
+    <script>
+        // State
+        let currentRole = null;
+        let uploadedData = null;
+        let currentSubjects = [];
+
+        // DOM Elements
+        const roleBtns = document.querySelectorAll('.role-btn');
+        const uploadSection = document.getElementById('uploadSection');
+        const fileInput = document.getElementById('fileInput');
+        const uploadBtn = document.getElementById('uploadBtn');
+        const uploadInfo = document.getElementById('uploadInfo');
+        const dashboard = document.getElementById('dashboard');
+        const tabBtns = document.querySelectorAll('.tab-btn');
+        const performanceTab = document.getElementById('performanceTab');
+        const loadingOverlay = document.getElementById('loadingOverlay');
+
+        // Role Selection
+        roleBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                roleBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                currentRole = btn.dataset.role;
+                
+                // Show/hide performance tab
+                if (currentRole === 'student' || currentRole === 'faculty') {
+                    performanceTab.style.display = 'block';
+                } else {
+                    performanceTab.style.display = 'none';
+                }
+            });
+        });
+
+        // File Upload
+        uploadBtn.addEventListener('click', () => {
+            if (!currentRole) {
+                alert('Please select your role first');
+                return;
+            }
+            fileInput.click();
+        });
+
+        uploadSection.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadSection.classList.add('dragover');
+        });
+
+        uploadSection.addEventListener('dragleave', () => {
+            uploadSection.classList.remove('dragover');
+        });
+
+        uploadSection.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadSection.classList.remove('dragover');
+            if (!currentRole) {
+                alert('Please select your role first');
+                return;
+            }
+            const file = e.dataTransfer.files[0];
+            if (file) handleFileUpload(file);
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) handleFileUpload(file);
+        });
+
+        // File Upload Handler
+        async function handleFileUpload(file) {
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('role', currentRole);
+
+            showLoading();
+
+            try {
+                const response = await fetch(`/api/upload?role=${currentRole}`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                if (result.status === 'success') {
+                    uploadedData = result;
+                    uploadInfo.textContent = `File loaded: ${result.filename} (${result.rows} rows, ${result.columns} columns)`;
+                    dashboard.style.display = 'block';
+                    
+                    // Load initial data
+                    loadAnalysisFunctions();
+                    loadInsights();
+                    generateVisualizations();
+                } else {
+                    alert('Error uploading file: ' + result.message);
+                }
+            } catch (error) {
+                alert('Error: ' + error.message);
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // Tab Switching
+        tabBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                tabBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+
+                document.querySelectorAll('.tab-pane').forEach(pane => {
+                    pane.classList.remove('active');
+                });
+
+                const tabId = btn.dataset.tab;
+                document.getElementById(tabId).classList.add('active');
+
+                // Load tab-specific data
+                if (tabId === 'relationship') loadRelationshipAnalysis();
+                if (tabId === 'timeseries') loadTimeSeriesAnalysis();
+            });
+        });
+
+        // Load Analysis Functions
+        async function loadAnalysisFunctions() {
+            if (!uploadedData) return;
+
+            try {
+                const response = await fetch('/api/analyze_with_ai', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        preview: uploadedData.preview,
+                        role: currentRole
+                    })
+                });
+
+                const result = await response.json();
+                
+                if (result.status === 'success') {
+                    displayAnalysisFunctions(result.analysis_result.analysis_recommendations);
+                }
+            } catch (error) {
+                console.error('Error loading analysis functions:', error);
+            }
+        }
+
+        function displayAnalysisFunctions(recommendations) {
+            const container = document.getElementById('analysisFunctions');
+            
+            if (!recommendations || recommendations.length === 0) {
+                container.innerHTML = '<p>No recommendations available</p>';
+                return;
+            }
+
+            let html = '';
+            recommendations.forEach(rec => {
+                html += `
+                    <div class="analysis-card">
+                        <h4>${rec.name.replace(/_/g, ' ')}</h4>
+                        <p>${rec.description}</p>
+                        <div class="columns">
+                            <small>Columns: ${rec.columns.join(', ')}</small>
+                        </div>
+                        <button class="btn btn-small" onclick="runAnalysis('${rec.name}')">Run Analysis</button>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+        }
+
+        // Run Analysis
+        window.runAnalysis = async function(analysisName) {
+            showLoading();
+
+            try {
+                const response = await fetch('/api/run_analysis_function', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        preview: uploadedData.preview,
+                        analysis_name: analysisName,
+                        role: currentRole
+                    })
+                });
+
+                const result = await response.json();
+                
+                if (result.status === 'success') {
+                    alert('Analysis completed! Check console for results.');
+                    console.log('Analysis result:', result.result);
+                } else {
+                    alert('Error running analysis: ' + result.message);
+                }
+            } catch (error) {
+                alert('Error: ' + error.message);
+            } finally {
+                hideLoading();
+            }
+        };
+
+        // Load Insights
+        async function loadInsights() {
+            if (!uploadedData) return;
+
+            try {
+                const response = await fetch('/api/get_ai_insights', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        preview: uploadedData.preview,
+                        role: currentRole
+                    })
+                });
+
+                const result = await response.json();
+                
+                if (result.status === 'success') {
+                    document.getElementById('insightsContent').innerHTML = 
+                        `<div class="insights-text">${result.insights.replace(/\n/g, '<br>')}</div>`;
+                }
+            } catch (error) {
+                console.error('Error loading insights:', error);
+            }
+        }
+
+        // Generate Visualizations
+        async function generateVisualizations() {
+            if (!uploadedData) return;
+
+            try {
+                const response = await fetch('/api/generate_visualizations', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        preview: uploadedData.preview,
+                        theme: {
+                            bg: '#0A071E',
+                            text: '#ffffff',
+                            primary: '#8a2be2',
+                            secondary: '#1a183c',
+                            chart_bg: '#1a183c'
+                        }
+                    })
+                });
+
+                const result = await response.json();
+                
+                if (result.status === 'success') {
+                    displayVisualizations(result.visualizations);
+                }
+            } catch (error) {
+                console.error('Error generating visualizations:', error);
+            }
+        }
+
+        function displayVisualizations(visualizations) {
+            const container = document.getElementById('visualizations');
+            
+            if (!visualizations || Object.keys(visualizations).length === 0) {
+                container.innerHTML = '<p>No visualizations available</p>';
+                return;
+            }
+
+            let html = '';
+            Object.keys(visualizations).slice(0, 4).forEach(key => {
+                html += `
+                    <div class="viz-card">
+                        <h4>${key.replace(/_/g, ' ')}</h4>
+                        <div class="viz-placeholder">Chart generated</div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+        }
+
+        // Load Relationship Analysis
+        async function loadRelationshipAnalysis() {
+            if (!uploadedData) return;
+
+            try {
+                const response = await fetch('/api/get_relationships_data', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        preview: uploadedData.preview,
+                        theme: {
+                            bg: '#0A071E',
+                            text: '#ffffff',
+                            primary: '#8a2be2',
+                            secondary: '#1a183c',
+                            chart_bg: '#1a183c'
+                        }
+                    })
+                });
+
+                const result = await response.json();
+                
+                if (result.status === 'success') {
+                    document.getElementById('relationshipContent').innerHTML = 
+                        '<p>Relationship analysis loaded. Check console for details.</p>';
+                    console.log('Relationship results:', result.results);
+                }
+            } catch (error) {
+                console.error('Error loading relationship analysis:', error);
+            }
+        }
+
+        // Load Time Series Analysis
+        async function loadTimeSeriesAnalysis() {
+            if (!uploadedData) return;
+
+            try {
+                const response = await fetch('/api/get_time_series_data', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        preview: uploadedData.preview,
+                        theme: {
+                            bg: '#0A071E',
+                            text: '#ffffff',
+                            primary: '#8a2be2',
+                            secondary: '#1a183c',
+                            chart_bg: '#1a183c'
+                        }
+                    })
+                });
+
+                const result = await response.json();
+                
+                if (result.status === 'success') {
+                    let html = '<p>Available date columns:</p><ul>';
+                    if (result.date_cols) {
+                        result.date_cols.forEach(col => {
+                            html += `<li>${col}</li>`;
+                        });
+                    }
+                    html += '</ul>';
+                    document.getElementById('timeseriesContent').innerHTML = html;
+                }
+            } catch (error) {
+                console.error('Error loading time series analysis:', error);
+            }
+        }
+
+        // Chat Functionality
+        sendMessageBtn.addEventListener('click', sendMessage);
+        chatInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') sendMessage();
+        });
+
+        async function sendMessage() {
+            const message = chatInput.value.trim();
+            if (!message || !uploadedData) return;
+
+            // Add user message
+            addChatMessage(message, 'user');
+            chatInput.value = '';
+
+            try {
+                const response = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        message: message,
+                        preview: uploadedData.preview,
+                        role: currentRole,
+                        history: chatHistory
+                    })
+                });
+
+                const result = await response.json();
+                
+                if (result.status === 'success') {
+                    addChatMessage(result.response, 'bot');
+                    chatHistory.push({ user: message, bot: result.response });
+                } else {
+                    addChatMessage('Error: ' + result.message, 'bot');
+                }
+            } catch (error) {
+                addChatMessage('Error: ' + error.message, 'bot');
+            }
+        }
+
+        function addChatMessage(text, sender) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${sender}`;
+            messageDiv.innerHTML = `<div class="message-content">${text}</div>`;
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        // Student Performance Functions
+        setSubjectsBtn.addEventListener('click', () => {
+            const numSubjects = parseInt(numSubjectsInput.value);
+            generateSubjectInputs(numSubjects);
+        });
+
+        function generateSubjectInputs(numSubjects) {
+            let html = '';
+            for (let i = 1; i <= numSubjects; i++) {
+                html += `
+                    <div class="card subject-card">
+                        <h4>Subject ${i}</h4>
+                        <div class="form-group">
+                            <label>Subject Name</label>
+                            <input type="text" class="subject-name" placeholder="e.g., Mathematics" value="Subject ${i}">
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Attendance (%)</label>
+                                <input type="number" class="attendance" min="0" max="100" value="75">
+                            </div>
+                            <div class="form-group">
+                                <label>Previous Score 1</label>
+                                <input type="number" class="prev-score1" min="0" max="100" value="70">
+                            </div>
+                            <div class="form-group">
+                                <label>Previous Score 2</label>
+                                <input type="number" class="prev-score2" min="0" max="100" value="70">
+                            </div>
+                            <div class="form-group">
+                                <label>Assignment Score</label>
+                                <input type="number" class="assignment" min="0" max="100" value="75">
+                            </div>
+                            <div class="form-group">
+                                <label>Previous CGPA</label>
+                                <input type="number" class="cgpa" min="0" max="10" step="0.1" value="7.5">
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+            subjectsContainer.innerHTML = html;
+        }
+
+        // Extracurricular toggle
+        extracurricularRadios.forEach(radio => {
+            radio.addEventListener('change', (e) => {
+                document.getElementById('activityGroup').style.display = 
+                    e.target.value === 'yes' ? 'block' : 'none';
+            });
+        });
+
+        // Calculate Ratings
+        calculateRatingsBtn.addEventListener('click', async () => {
+            if (!uploadedData || (currentRole !== 'student' && currentRole !== 'faculty')) {
+                alert('This feature is only available for students and faculty');
+                return;
+            }
+
+            const subjectCards = document.querySelectorAll('.subject-card');
+            const subjects = [];
+
+            for (let card of subjectCards) {
+                const name = card.querySelector('.subject-name').value;
+                subjects.push({
+                    name: name,
+                    inputs: {
+                        "Attendance": parseFloat(card.querySelector('.attendance').value),
+                        "Extracurricular_Activities": document.querySelector('input[name="extracurricular"]:checked').value,
+                        "Previous_Scores_1": parseFloat(card.querySelector('.prev-score1').value),
+                        "previous_Score_2": parseFloat(card.querySelector('.prev-score2').value),
+                        "Assignment_Score": parseFloat(card.querySelector('.assignment').value),
+                        "Previous_Semester_CGPA": parseFloat(card.querySelector('.cgpa').value)
+                    }
+                });
+            }
+
+            const extracurricular = document.querySelector('input[name="extracurricular"]:checked').value;
+            const activity = extracurricular === 'yes' ? document.getElementById('activityInput').value : null;
+
+            showLoading();
+
+            try {
+                const response = await fetch('/api/student_performance_rating', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        num_subjects: subjects.length,
+                        subjects: subjects,
+                        extracurricular: extracurricular,
+                        extracurricular_activity: activity
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.status === 'success') {
+                    displayRatingsResult(result);
+                } else {
+                    alert('Error: ' + result.message);
+                }
+            } catch (error) {
+                alert('Error: ' + error.message);
+            } finally {
+                hideLoading();
+            }
+        });
+
+        function displayRatingsResult(result) {
+            let html = `
+                <div class="card">
+                    <h3>Performance Ratings</h3>
+                    <div class="ratings-grid">
+            `;
+
+            result.subject_ratings.forEach(subject => {
+                html += `
+                    <div class="rating-card">
+                        <h4>${subject.name}</h4>
+                        <div class="rating-value">${subject.rating.toFixed(1)}</div>
+                        <p>/10</p>
+                    </div>
+                `;
+            });
+
+            html += `
+                    </div>
+                    <div class="overall-rating">
+                        <h4>Overall Rating</h4>
+                        <div class="overall-value">${result.overall_rating.toFixed(1)}/10</div>
+                    </div>
+                    <div class="report-content">
+                        <h4>AI Report</h4>
+                        <p>${result.report.replace(/\n/g, '<br>')}</p>
+                    </div>
+                    <button class="btn btn-secondary" onclick="downloadReport()">Download PDF Report</button>
+                </div>
+            `;
+
+            ratingsResult.innerHTML = html;
+            ratingsResult.style.display = 'block';
+        }
+
+        window.downloadReport = async function() {
+            // Implement PDF download
+            alert('PDF download functionality will be implemented');
+        };
+
+        // Export Functionality
+        exportButtons.forEach(btn => {
+            btn.addEventListener('click', async () => {
+                if (!uploadedData) return;
+
+                const format = btn.dataset.format;
+                const insights = document.getElementById('insightsContent').innerText;
+
+                try {
+                    const response = await fetch('/api/export_dashboard', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            preview: uploadedData.preview,
+                            format: format,
+                            insights: insights,
+                            role: currentRole
+                        })
+                    });
+
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `autodash_report.${format}`;
+                    a.click();
+                } catch (error) {
+                    alert('Error exporting: ' + error.message);
+                }
+            });
+        });
+
+        // Run All Analyses
+        document.getElementById('runAllAnalyses').addEventListener('click', () => {
+            alert('This will run all available analyses');
+        });
+
+        // Utility Functions
+        function showLoading() {
+            loadingOverlay.style.display = 'flex';
+        }
+
+        function hideLoading() {
+            loadingOverlay.style.display = 'none';
+        }
+
+        // Initialize
+        generateSubjectInputs(5);
+    </script>
+</body>
+</html>
